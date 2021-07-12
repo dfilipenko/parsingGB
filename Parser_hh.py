@@ -3,7 +3,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-vacancy = ""
+vacancy = input('Введите название вакансии: ')
 ENDPOINT_URL = "https://nn.hh.ru/search/vacancy"
 PARAMS = {
     "area": "66",
@@ -97,14 +97,13 @@ class HhScraper:
         return info
 
     def save_info_about_vacance(self):
-        with open("vacancy_hh.json", 'w', encoding="utf-8") as file:
+        with open(f"vacancy_hh_{vacancy}.json", 'w', encoding="utf-8") as file:
             json.dump(self.info_about_vacancies, file)
 
 
 
 
 if __name__ == "__main__":
-    vacancy = input('Введите название вакансии: ')
     scraper = HhScraper(ENDPOINT_URL, PARAMS, headers)
     scraper.run()
     scraper.save_info_about_vacance()
