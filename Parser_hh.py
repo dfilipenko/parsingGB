@@ -11,7 +11,7 @@ PARAMS = {
     "enable_snippets": "true",
     "st": "searchVacancy",
     "text": vacancy,
-    "page": 0
+
 }
 
 headers = {
@@ -52,17 +52,18 @@ class HhScraper:
                 info = self.get_info_from_vacancy(vacancy)
                 self.info_about_vacancies.append(info)
         next_link = soup.find("a", attrs={"class": "bloko-button", "data-qa": "pager-next"})
-        if  next_link == None:
+
+        while next_link != None:
             find_vacancies(soup)
-        else:
-            while next_link != None:
-                find_vacancies(soup)
-                next = next_link.attrs["href"]
-                page_number = next.split("page=")[1]
-                params = self.start_params
-                params["page"] = page_number
-                html_string = self.get_html_string(self.start_url, params, self.headers)
-                soup = HhScraper.get_dom(html_string)
+            next = next_link.attrs["href"]
+            page_number = int(next.split("page=")[1])
+            params = self.start_params
+            params["page"] = page_number
+            html_string = self.get_html_string(self.start_url, params, self.headers)
+            soup = HhScraper.get_dom(html_string)
+            next_link = soup.find("a", attrs={"class": "bloko-button", "data-qa": "pager-next"})
+
+        return self.info_about_vacancies
 
     def get_info_from_vacancy(self, vacancy):
         info = {}
