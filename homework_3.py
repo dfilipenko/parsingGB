@@ -3,6 +3,8 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
+from pprint import pprint
+import re
 
 vacancy = input('Введите название вакансии: ')
 
@@ -60,8 +62,11 @@ class HhScraper:
                                       )
             for vacancy in vacancies:
                 info = self.get_info_from_vacancy(vacancy)
-                self.info_about_vacancies.append(info)
-                self.collection.insert_one(info)
+                try:
+                    self.info_about_vacancies.append(info)
+                    self.collection.insert_one(info)
+                except Exception:       # Если индекс уже существует, запись не вставляется, цикл продолжается
+                       continue
         next_link = soup.find("a", attrs={"class": "bloko-button", "data-qa": "pager-next"})
 
         while next_link != None:
@@ -105,6 +110,7 @@ class HhScraper:
                                         "data-qa": "vacancy-serp__vacancy-title"
                                     }
                                     ).attrs["href"]
+        info["_id"] = int(re.split('vacancy/|\?', info["href"])[1])   # В БД будет передаваться запись с предопределенным индексом
         info["source"] = "HH.ru"
         return info
 
@@ -112,10 +118,19 @@ class HhScraper:
         with open(f"vacancy_hh_{vacancy}.json", 'w', encoding="utf-8") as file:
             json.dump(self.info_about_vacancies, file)
 
+    def find_salary(self, salary):
+        cursor = self.collection.find({'$or':[{'max_salary': {'$gt': salary}}, {'min_salary': {'$gt': salary}}]})
+        for item in cursor:
+            pprint(item)
+
+
 
 
 
 if __name__ == "__main__":
-    scraper = HhScraper(ENDPOINT_URL, PARAMS, headers, MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_COLL)
+    scraper = HhScraper(
+        ENDPOINT_URL, PARAMS, headers, MONGO_HOST, MONGO_PORT, MONGO_DB, MONGO_COLL
+    )
     scraper.run()
     #scraper.save_info_about_vacance()
+    scraper.find_salary(50000)
